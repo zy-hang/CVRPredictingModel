@@ -1,0 +1,37 @@
+```
+# 基础数据处理库
+numpy==1.22.4
+pandas==1.5.3
+scikit-learn==1.2.2
+
+# 深度学习框架
+torch==2.0.1
+torchvision==0.15.2
+
+# 可视化库
+matplotlib==3.7.1
+seaborn==0.12.2
+
+# 进度条显示
+tqdm==4.65.0
+
+# 特征工程工具
+category_encoders==2.6.0
+feature-engine==1.5.2
+
+# 日期时间处理
+python-dateutil==2.8.2
+
+# 文件和路径处理
+pathlib2==2.3.7
+
+# 随机数和概率分布
+scipy==1.10.1
+
+# 测试框架
+pytest==7.3.1
+
+# Jupyter环境支持
+jupyter==1.0.0
+ipykernel==6.23.1
+```
