@@ -9,6 +9,7 @@ from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 from sklearn.model_selection import train_test_split
 from datetime import datetime
 import pickle
+import json
 from tqdm import tqdm
 from CVR_Model import PLE
 
@@ -41,7 +42,7 @@ df['time_diff'] = (reference_time - df['time']).dt.total_seconds() / 86400  # �
 scaler = MinMaxScaler()
 df['time_diff_norm'] = scaler.fit_transform(df['time_diff'].values.reshape(-1, 1))
 df['timestamp_norm'] = (df['time'].astype(int) / 10 ** 9 - df['time'].astype(int).min() / 10 ** 9) / (
-            df['time'].astype(int).max() / 10 ** 9 - df['time'].astype(int).min() / 10 ** 9)
+        df['time'].astype(int).max() / 10 ** 9 - df['time'].astype(int).min() / 10 ** 9)
 
 print("3) 创建用户行为序列特征...")
 
@@ -165,13 +166,43 @@ for feature, dim in embedding_dims.items():
 # 保存长期兴趣模拟
 print("6) 模拟长期兴趣...")
 
+REDIS_HOST = "localhost"
+REDIS_PORT = 6379
+REDIS_DB = 0
+
 
 def generate_long_term_interest(df, dim=128):
-    """模拟用户长期兴趣，实际项目中应该从Redis获取"""
+    """从Redis获取用户长期兴趣向量"""
     user_interests = {}
-    for user_id in df['user_id'].unique():
-        # 这里简单地为每个用户生成一个随机向量作为长期兴趣
-        user_interests[user_id] = np.random.randn(dim).astype(np.float32)
+
+    try:
+        # 连接Redis
+        r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB)
+
+        # 获取所有用户ID
+        user_ids = df['user_id'].unique()
+
+        for user_id in user_ids:
+            # 构建用户在Redis中的键名
+            key = f"user:{user_id}"
+
+            # 尝试从Redis获取用户向量
+            user_vector = r.get(key)
+
+            if user_vector:
+                # 解析JSON字符串为Python列表
+                vector = json.loads(user_vector)
+                user_interests[user_id] = np.array(vector, dtype=np.float32)
+            else:
+                # 如果Redis中没有该用户数据，则生成随机向量作为后备
+                user_interests[user_id] = np.random.randn(dim).astype(np.float32)
+
+    except Exception as e:
+        print(f"从Redis获取用户兴趣向量失败: {e}")
+        # 发生异常时回退到随机生成
+        for user_id in df['user_id'].unique():
+            user_interests[user_id] = np.random.randn(dim).astype(np.float32)
+
     return user_interests
 
 
